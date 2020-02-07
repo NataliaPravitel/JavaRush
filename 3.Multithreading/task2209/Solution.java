@@ -28,7 +28,7 @@ public class Solution {
         int i = 0;
         while (i < words.length) {
             line.add(words[i]);
-            line = searching(line, words);
+            line = searchWords(line, words);
             if(line.size() != words.length) {
                 line.clear();
                 i++;
@@ -44,7 +44,7 @@ public class Solution {
         return new StringBuilder(builder.toString().trim());
     }
 
-    public static LinkedList searching(LinkedList<String> line, String[] words) {
+    public static LinkedList searchWords(LinkedList<String> line, String[] words) {
         for(int i = 0; i < words.length; i++) {
             if(!line.contains(words[i])) {
                 String lastWord = line.getLast();
