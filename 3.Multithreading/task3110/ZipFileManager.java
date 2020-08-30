@@ -245,7 +245,6 @@ import com.javarush.task.task31.task3110.exception.PathIsNotFoundException;
 import com.javarush.task.task31.task3110.exception.WrongZipFileException;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
@@ -429,11 +428,9 @@ public class ZipFileManager {
                     throw new PathIsNotFoundException();
                 }
                 if (!filesInOriginalArchive.contains(path.getFileName())) {
-                    try (InputStream inputStream = Files.newInputStream(path)) {
-                        ZipEntry entry = new ZipEntry(path.getFileName().toString());
-                        zipOutputStream.putNextEntry(entry);
-                        copyData(inputStream, zipOutputStream);
-                    }
+                    addNewZipEntry(zipOutputStream, path.getParent(), path.getFileName());
+                    ConsoleHelper.writeMessage(String.format("Файл '%s' добавлен в архиве.",
+                            path.toString()));
                 } else {
                     ConsoleHelper.writeMessage("Такой файл уже есть в архиве");
                 }
