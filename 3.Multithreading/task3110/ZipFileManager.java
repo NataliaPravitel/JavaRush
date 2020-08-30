@@ -207,10 +207,45 @@ package com.javarush.task.task31.task3110;
 // который будет делегировать свое выполнение методу removeFiles(List<Path> pathList).
 //6. Метод execute() в классе ZipRemoveCommand должен получить объект ZipFileManager и удалить из архива файл, считанный с консоли.
 
+
+//Archiver (17)
+//Осталась ерунда. Добавить добавление файла в архив. Звучит подозрительно, но именно этим мы и займемся.
+//Добавление файлов похоже на удаление, мы создаем временный файл архив, переписываем в него все содержимое
+// старого архива и добавляем новые файлы. Потом заменяем старый файл архива новым.
+//1. Добавь публичный метод void addFiles(List<Path> absolutePathList) throws Exception в класс ZipFileManager,
+// где absolutePathList - список абсолютных путей добавляемых файлов.
+//Этот метод должен:
+//1.1. Как обычно, бросать исключение WrongZipFileException, если файл архива не существует
+//1.2. Создать временный файл архива
+//1.3. Пройти по всем файлам оригинального архива, переписать каждый файл в новый архив, добавить имя переписанного файла в какой-нибудь локальный список.
+//1.4. Пройтись по списку добавляемых файлов.
+//1.5. Для каждого файла проверить, есть ли он на диске и является ли он обычным файлом, если что-то не так, кинь исключение PathIsNotFoundException()
+//1.6. Проверить, есть ли добавляемый файл уже в архиве (используй список из п.1.3). Такое возможно, если пользователь уже когда-то добавлял его.
+//- Если файла нет в списке, добавь его в новый архив, выведи сообщение, что такой-то файл добавлен в архив
+//- Если файл есть в списке, просто сообщи пользователю, что такой файл уже есть в архиве
+//1.7. Заменить оригинальный файл архива временным, в котором уже есть добавленные файлы.
+//2. Добавь публичный метод void addFile(Path absolutePath) throws Exception в класс ZipFileManager,
+// реализуй его с помощью вызова метода addFiles(), аналогично тому, как мы это делали для удаления файла.
+//3. Реализуй метод execute() класса ZipAddCommand: все как обычно, но не забудь спросить у пользователя
+// в какой архив и какой файл он хочет добавить, обработай исключение PathIsNotFoundException, которое может кинуть метод addFile().
+//4. Запусти программу и проверить, что добавление файла теперь работает.
+//
+//
+//Требования:
+//1. В классе ZipFileManager нужно создать публичный метод void addFiles(List<Path> absolutePathList) throws Exception.
+//2. Метод addFiles должен бросать исключение WrongZipFileException, если файл архива не существует.
+//3. Метод addFiles должен создавать временный файл архива с помощью метода Files.createTempFile.
+//4. Метод addFiles должен проходить по списку добавляемых файлов и бросить PathIsNotFoundException, если какой-то файл не существует.
+//5. Метод addFiles должен записывать в новый архив новые файлы и все файлы из старого архива. Затем, заменить старый архив новым.
+//6. В классе ZipFileManager нужно создать публичный метод void addFile(Path absolutePath) throws Exception,
+// который будет делегировать свое выполнение методу addFiles(List<Path> absolutePathList).
+//7. Метод execute() в классе ZipAddCommand должен получить объект ZipFileManager и добавить в архив файл, считанный с консоли.
+
 import com.javarush.task.task31.task3110.exception.PathIsNotFoundException;
 import com.javarush.task.task31.task3110.exception.WrongZipFileException;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
@@ -342,15 +377,6 @@ public class ZipFileManager {
     public void removeFile(Path path) throws  Exception {
         removeFiles(Collections.singletonList(path));
     }
-    //В pathList будет передаваться список относительных путей на файлы внутри архива.
-//Он должен:
-//1.1. Бросать исключение WrongZipFileException, если файл архива не существует.
-//1.2. Создать временный файл архива в директории по умолчанию с помощью метода createTempFile() класса Files.
-//1.3. Пройтись по всем файлам оригинального архива, проверить, есть ли текущий файл в списке на удаление.
-//- Если файл есть в списке, вывести сообщение, что мы удалили файл с таким-то именем и перейти к следующему файлу.
-//- Если файла нет в списке на удаление, переписать его в новый архив
-//1.4. Заменить оригинальный файл архива временным, в который мы записали нужные файлы.
-//Это нужно сделать с помощью метода move() класса Files
     public void removeFiles(List<Path> pathList) throws Exception {
         if (!Files.isRegularFile(zipFile)) {
             throw new WrongZipFileException();
@@ -359,7 +385,7 @@ public class ZipFileManager {
 
         try (ZipOutputStream zipOutputStream = new ZipOutputStream(Files.newOutputStream(temp));
              ZipInputStream zipInputStream = new ZipInputStream(Files.newInputStream(zipFile))
-             ) {
+        ) {
             ZipEntry zipEntry = zipInputStream.getNextEntry();
 
             while (zipEntry != null) {
@@ -374,6 +400,47 @@ public class ZipFileManager {
         }
         Files.move(temp, zipFile, StandardCopyOption.REPLACE_EXISTING);
 
+    }
+
+    public void addFile(Path absolutePath) throws Exception {
+        addFiles(Collections.singletonList(absolutePath));
+    }
+
+    public void addFiles(List<Path> absolutePathList) throws Exception {
+        if (!Files.isRegularFile(zipFile)) {
+            throw new WrongZipFileException();
+        }
+        Path temp = Files.createTempFile(null, null);
+        try (ZipOutputStream zipOutputStream = new ZipOutputStream(Files.newOutputStream(temp));
+             ZipInputStream zipInputStream = new ZipInputStream(Files.newInputStream(zipFile))
+        ) {
+            ZipEntry zipEntry = zipInputStream.getNextEntry();
+            List<Path> filesInOriginalArchive = new ArrayList<>();
+
+            while (zipEntry != null) {
+                filesInOriginalArchive.add(Paths.get(zipEntry.getName()));
+                zipOutputStream.putNextEntry(zipEntry);
+                copyData(zipInputStream, zipOutputStream);
+                zipEntry = zipInputStream.getNextEntry();
+            }
+
+            for (Path path : absolutePathList) {
+                if (Files.notExists(path) && !Files.isRegularFile(path)) {
+                    throw new PathIsNotFoundException();
+                }
+                if (!filesInOriginalArchive.contains(path.getFileName())) {
+                    try (InputStream inputStream = Files.newInputStream(path)) {
+                        ZipEntry entry = new ZipEntry(path.getFileName().toString());
+                        zipOutputStream.putNextEntry(entry);
+                        copyData(inputStream, zipOutputStream);
+                    }
+                } else {
+                    ConsoleHelper.writeMessage("Такой файл уже есть в архиве");
+                }
+            }
+        }
+
+        Files.move(temp, zipFile, StandardCopyOption.REPLACE_EXISTING);
     }
 
     private void copyData(InputStream in, OutputStream out) throws Exception {
