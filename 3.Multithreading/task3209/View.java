@@ -128,6 +128,60 @@ package com.javarush.task.task32.task3209;
 //11. Конструктор UndoListener(UndoManager undoManager) должен корректно инициализировать поле undoManager.
 //12. Метод undoableEditHappened(UndoableEditEvent e) в классе UndoListener должен из переданного события получать правку и добавлять ее в undoManager.
 
+//HTML Editor (14)
+//14.1. Добавь в класс представления метод selectHtmlTab(). Он должен:
+//14.1.1. Выбирать html вкладку (переключаться на нее).
+//14.1.2. Сбрасывать все правки с помощью метода, который ты реализовал ранее.
+//14.2. Добавь в класс контроллера геттер для модели, в нашем случае это поле document.
+//14.3. Добавь в представление метод update(), который должен получать документ у контроллера и устанавливать его в панель редактирования htmlTextPane.
+//14.4. Добавь в представление метод showAbout(), который должен показывать диалоговое окно с информацией о программе.
+// Информацию придумай сам, а вот тип сообщения должен быть JOptionPane.INFORMATION_MESSAGE.
+//
+//
+//Требования:
+//1. Класс View должен содержать публичный метод selectHtmlTab(), который должен выбирать вкладку и сбрасывать все правки.
+//2. Класс Controller должен содержать геттер для поля document.
+//3. Класс View должен содержать публичный метод update(), который должен устанавливать документ в панель редактирования.
+//4. Класс View должен содержать публичный метод showAbout(), который должен показывать диалоговое окно с информацией о программе.
+
+//HTML Editor (18)
+//Реализуй метод selectedTabChanged() представления. Этот метод вызывается, когда произошла смена выбранной вкладки. Итак:
+//18.1. Метод должен проверить, какая вкладка сейчас оказалась выбранной.
+//18.2. Если выбрана вкладка с индексом 0 (html вкладка), значит нам нужно получить текст из plainTextPane и установить его в контроллер с помощью метода setPlainText.
+//18.3. Если выбрана вкладка с индексом 1 (вкладка с html текстом), то необходимо получить текст у контроллера с помощью метода getPlainText() и установить его в панель plainTextPane.
+//18.4. Сбросить правки (вызвать метод resetUndo представления).
+//
+//
+//Требования:
+//1. Метод selectedTabChanged() должен проверить, какая вкладка сейчас оказалась выбранной.
+//2. Если индекс вкладки равен 0 - метод selectedTabChanged() должен получить текст из plainTextPane и установить его в контроллер с помощью метода setPlainText().
+//3. Если индекс вкладки равен 1 - метод selectedTabChanged() должен получить текст у контроллера с помощью метода getPlainText() и установить его в панель plainTextPane.
+//4. Метод selectedTabChanged() должен сбросить правки.
+
+//HTML Editor (19)
+//Реализуем метод actionPerformed(ActionEvent actionEvent) у представления, этот метод наследуется
+// от интерфейса ActionListener и будет вызваться при выборе пунктов меню, у которых наше представление указано в виде слушателя событий.
+//19.1. Получи из события команду с помощью метода getActionCommand(). Это будет обычная строка.
+//По этой строке ты можешь понять какой пункт меню создал данное событие.
+//19.2. Если это команда "Новый", вызови у контроллера метод createNewDocument().
+//В этом пункте и далее, если необходимого метода в контроллере еще нет - создай заглушки.
+//19.3. Если это команда "Открыть", вызови метод openDocument().
+//19.4. Если "Сохранить", то вызови saveDocument().
+//19.5. Если "Сохранить как..." - saveDocumentAs().
+//19.6. Если "Выход" - exit().
+//19.7. Если "О программе", то вызови метод showAbout() у представления.
+//Проверь, что заработали пункты меню Выход и О программе.
+//
+//
+//Требования:
+//1. Метод actionPerformed(ActionEvent actionEvent) должен получать из события команду с помощью метода getActionCommand().
+//2. Если в метод actionPerformed(ActionEvent actionEvent) передано событие с командой "Новый", метод должен вызывать у контроллера createNewDocument().
+//3. Если в метод actionPerformed(ActionEvent actionEvent) передано событие с командой "Открыть", метод должен вызывать у контроллера openDocument().
+//4. Если в метод actionPerformed(ActionEvent actionEvent) передано событие с командой "Сохранить", метод должен вызывать у контроллера saveDocument().
+//5. Если в метод actionPerformed(ActionEvent actionEvent) передано событие с командой "Сохранить как...", метод должен вызывать у контроллера saveDocumentAs().
+//6. Если в метод actionPerformed(ActionEvent actionEvent) передано событие с командой "Выход", метод должен вызывать у контроллера exit().
+//7. Если в метод actionPerformed(ActionEvent actionEvent) передано событие с командой "О программе", метод должен вызывать у представления showAbout().
+
 import com.javarush.task.task32.task3209.listeners.FrameListener;
 import com.javarush.task.task32.task3209.listeners.TabbedPaneChangeListener;
 import com.javarush.task.task32.task3209.listeners.UndoListener;
@@ -204,10 +258,39 @@ public class View extends JFrame implements ActionListener {
   }
 
   public void selectedTabChanged() {
+    switch (tabbedPane.getSelectedIndex()) {
+      case 0:
+        controller.setPlainText(plainTextPane.getText());
+        break;
+      case 1:
+        plainTextPane.setText(controller.getPlainText());
+        break;
+    }
+    resetUndo();
   }
 
   @Override
   public void actionPerformed(ActionEvent e) {
+    switch (e.getActionCommand()) {
+      case "Новый":
+        controller.createNewDocument();
+        break;
+      case "Открыть":
+        controller.openDocument();
+        break;
+      case "Сохранить":
+        controller.saveDocument();
+        break;
+      case "Сохранить как...":
+        controller.saveDocumentAs();
+        break;
+      case "Выход":
+        controller.exit();
+        break;
+      case "О программе":
+        showAbout();
+        break;
+    }
   }
 
   public void undo() {
@@ -236,5 +319,23 @@ public class View extends JFrame implements ActionListener {
 
   public void resetUndo() {
     undoManager.discardAllEdits();
+  }
+
+  public boolean isHtmlTabSelected() {
+    return tabbedPane.getSelectedIndex() == 0;
+  }
+
+  public void selectHtmlTab() {
+    tabbedPane.setSelectedIndex(0);
+    resetUndo();
+  }
+
+  public void update() {
+    htmlTextPane.setDocument(controller.getDocument());
+  }
+
+  public void showAbout() {
+    JOptionPane.showMessageDialog(this, "N_Pravitel", "Creator",
+            JOptionPane.INFORMATION_MESSAGE);
   }
 }
