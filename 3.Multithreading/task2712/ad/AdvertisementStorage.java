@@ -43,9 +43,9 @@ public final class AdvertisementStorage {
             3 * 60));
     videos.add(new Advertisement(someContent, "Second Video", 100, 10,
             15 * 60));
-    videos.add(new Advertisement(someContent, "Third Video", 400, 2,
+    videos.add(new Advertisement(someContent, "Third Video", 400, 1,
             10 * 60));
-    videos.add(new Advertisement(someContent, "Forth Video", 5000, 100,
+    videos.add(new Advertisement(someContent, "четвертое видео", 5000, 100,
             4 * 60));
   }
 
@@ -63,4 +63,5 @@ public final class AdvertisementStorage {
   public void add(Advertisement advertisement) {
     videos.add(advertisement);
   }
+
 }

@@ -4,6 +4,7 @@ import com.javarush.task.task27.task2712.ConsoleHelper;
 import com.javarush.task.task27.task2712.Tablet;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 //Ресторан(1)
@@ -79,7 +80,11 @@ public class Order {
 
   public Order(Tablet tablet) throws IOException {
     this.tablet = tablet;
-    this.dishes = ConsoleHelper.getAllDishesForOrder();
+    initDishes();
+  }
+
+  public List<Dish> getDishes() {
+    return dishes;
   }
 
   @Override
@@ -102,5 +107,9 @@ public class Order {
 
   public boolean isEmpty() {
     return dishes.isEmpty();
+  }
+
+  protected void initDishes() throws IOException {
+    this.dishes = ConsoleHelper.getAllDishesForOrder();
   }
 }

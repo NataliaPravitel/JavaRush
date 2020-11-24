@@ -1,0 +1,40 @@
+package com.javarush.task.task27.task2712.statistic.event;
+//Ресторан(12)
+//У нас выделяются несколько событий:
+//*повар приготовил заказ
+//*выбрали набор видео-роликов для заказа
+//*нет ни одного видео-ролика, который можно показать во время приготовления заказа
+//
+//Это постоянные данные, поэтому для их хранения подходит энам.
+//
+//1. В пакете event создай enum EventType {COOKED_ORDER, SELECTED_VIDEOS, NO_AVAILABLE_VIDEO}
+//
+//2. В пакете event создай три класса, соответствующих значениям энама. Они будут (должны) представлять собой события.
+//Мы будем регистрировать их экземпляры в хранилище.
+//Имена классов с параметрами для конструкторов:
+//2.1. CookedOrderEventDataRow(String tabletName, String cookName, int cookingTimeSeconds, List<Dish> cookingDishs)
+//где - tabletName - имя планшета
+//cookName - имя повара
+//cookingTimeSeconds - время приготовления заказа в секундах
+//cookingDishs - список блюд для приготовления
+//2.2. NoAvailableVideoEventDataRow(int totalDuration)
+//totalDuration - время приготовления заказа в секундах
+//2.3. VideoSelectedEventDataRow(List<Advertisement> optimalVideoSet, long amount, int totalDuration)
+//optimalVideoSet - список видео-роликов, отобранных для показа
+//amount - сумма денег в копейках
+//totalDuration - общая продолжительность показа отобранных рекламных роликов
+//3. В классы, созданные в п.2., добавьте поле Date currentDate, которое проинициализируй в конструкторе текущей датой.
+//
+//
+//Требования:
+//1. В пакете event должен быть создан enum EventType с элементами {COOKED_ORDER, SELECTED_VIDEOS, NO_AVAILABLE_VIDEO}.
+//2. В пакете event должен быть создан класс CookedOrderEventDataRow реализующий интерфейс EventDataRow
+// с конструктором и полями описанными в условии.
+//3. В пакете event должен быть создан класс NoAvailableVideoEventDataRow реализующий интерфейс EventDataRow
+// с конструктором и полями описанными в условии.
+//4. В пакете event должен быть создан класс VideoSelectedEventDataRow реализующий интерфейс EventDataRow
+// с конструктором и полями описанными в условии.
+
+public enum EventType {
+  COOKED_ORDER, SELECTED_VIDEOS, NO_AVAILABLE_VIDEO
+}

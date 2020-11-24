@@ -38,6 +38,9 @@ package com.javarush.task.task27.task2712.ad;
 //5. В классе Advertisement в пакете ad должен быть создан корректный конструктор в соответствии с условием задачи.
 //6. Класс AdvertisementStorage должен быть синглтоном и иметь публичный статический метод getInstance.
 
+import com.javarush.task.task27.task2712.statistic.StatisticManager;
+import com.javarush.task.task27.task2712.statistic.event.NoAvailableVideoEventDataRow;
+
 public class Advertisement {
   private Object content;
   private String name;
@@ -71,7 +74,20 @@ public class Advertisement {
     if (hits > 0) {
       hits--;
     } else {
-      throw new UnsupportedOperationException();
+      throw new NoVideoAvailableException();
     }
+  }
+  public int getHits() {
+    return hits;
+  }
+
+  public boolean isActive() {
+    return hits > 0;
+  }
+
+  @Override
+  public String toString() {
+    return String.format("%s is displaying... %d, %d", name, amountPerOneDisplaying,
+            amountPerOneDisplaying * 1000 / duration);
   }
 }

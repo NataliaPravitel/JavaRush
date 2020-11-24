@@ -114,96 +114,191 @@ package com.javarush.task.task27.task2712.ad;
 
 
 import com.javarush.task.task27.task2712.ConsoleHelper;
+import com.javarush.task.task27.task2712.statistic.StatisticManager;
+import com.javarush.task.task27.task2712.statistic.event.NoAvailableVideoEventDataRow;
+import com.javarush.task.task27.task2712.statistic.event.VideoSelectedEventDataRow;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class AdvertisementManager {
   private final AdvertisementStorage storage = AdvertisementStorage.getInstance();
   private int timeSeconds;
-  private List<Advertisement> advertisements = storage.list();
-  private List<Advertisement> optimalVideos = new ArrayList<>();
-  private long maxMoney = Long.MIN_VALUE;
-  private int maxDuration = Integer.MIN_VALUE;
-  private int minSize = advertisements.size();
+  private List<Advertisement> bestAdvertisements;
+  private long bestAmount;
+  private int bestDuration = Integer.MAX_VALUE;
 
   public AdvertisementManager(int timeSeconds) {
     this.timeSeconds = timeSeconds;
   }
 
   public void processVideos() {
-    if (!advertisements.isEmpty()) {
-      sort();
-      addProfitVideos();
-      print();
-    } else {
+    StatisticManager manager = StatisticManager.getInstance();
+    if (storage.list().isEmpty()) {
+      manager.register(new NoAvailableVideoEventDataRow(0));
       throw new NoVideoAvailableException();
     }
+    List<Advertisement> advertisements = storage.list().stream()
+            .filter(advertisement -> advertisement.getHits() > 0)
+            .collect(Collectors.toList());
+    makeAllAdvertisements(advertisements);
+    bestAdvertisements
+            .sort(Comparator.comparingLong(Advertisement::getAmountPerOneDisplaying)
+                    .thenComparingInt(Advertisement::getDuration)
+                    .reversed());
+
+    manager.register(new VideoSelectedEventDataRow(bestAdvertisements,
+            calcAmount(bestAdvertisements), calcDuration(bestAdvertisements)));
+    bestAdvertisements.forEach(advertisement -> {
+      ConsoleHelper.writeMessage(advertisement.toString());
+      advertisement.revalidate();
+    });
   }
 
-  private void addProfitVideos() {
-    List<Advertisement> tempVideoList = new ArrayList<>();
-    for (int i = 0; i < advertisements.size(); i++) {
-      Advertisement adv = advertisements.get(i);
-      if (timeSeconds - adv.getDuration() >= 0 && !tempVideoList.contains(adv) &&
-              adv.getAmountPerOneDisplaying() > 0) {
-        tempVideoList.add(adv);
-        timeSeconds -= adv.getDuration();
-      }
-    }
 
-    long tempSumMoney = calcMoney(tempVideoList);
-    if (maxMoney < tempSumMoney) {
-      maxMoney = tempSumMoney;
-      optimalVideos = tempVideoList;
+  private int calcDuration(List<Advertisement> advertisements) {
+    return advertisements.stream().mapToInt(Advertisement::getDuration).sum();
+  }
 
-    } else if (maxMoney == tempSumMoney) {
-      int tempSumDuration = calcDuration(tempVideoList);
-      if (maxDuration < tempSumDuration) {
-        maxDuration = tempSumDuration;
-        optimalVideos = tempVideoList;
+  private long calcAmount(List<Advertisement> advertisements) {
+    return advertisements.stream().mapToLong(Advertisement::getAmountPerOneDisplaying).sum();
+  }
 
-      } else if (maxDuration == tempSumDuration) {
-        if (minSize > tempVideoList.size()) {
-          minSize = tempVideoList.size();
-          optimalVideos = tempVideoList;
-        }
-      }
+  private void checkSet(List<Advertisement> advertisements) {
+    int newDuration = calcDuration(advertisements);
+    long newAmount = calcAmount(advertisements);
+
+    if (bestAdvertisements == null && newDuration <= timeSeconds) {
+      bestAdvertisements = advertisements;
+      bestAmount = newAmount;
+      bestDuration = newDuration;
+
     } else {
-      addProfitVideos();
-    }
+      if (newDuration <= timeSeconds) {
 
-  }
+        if (newAmount > bestAmount) {
+          bestAdvertisements = advertisements;
+          bestAmount = newAmount;
+          bestDuration = newDuration;
+        }
 
-  private long calcMoney(List<Advertisement> videos) {
-    long sumMoney = 0;
-    for (Advertisement adv : videos) {
-      sumMoney += adv.getAmountPerOneDisplaying();
-    }
-    return sumMoney;
-  }
+        if (newAmount == bestAmount) {
+          if (newDuration > bestDuration) {
+            bestAdvertisements = advertisements;
+            bestAmount = newAmount;
+            bestDuration = newDuration;
+          }
 
-  private int calcDuration(List<Advertisement> videos) {
-    int sumDuration = 0;
-    for (Advertisement adv : videos) {
-      sumDuration += adv.getDuration();
-    }
-    return sumDuration;
-  }
+          if (newDuration == bestDuration && advertisements.size() < bestAdvertisements.size()) {
+            bestAdvertisements = advertisements;
+            bestAmount = newAmount;
+            bestDuration = newDuration;
+          }
+        }
 
-  private void sort() {
-    Collections.sort(advertisements, Comparator.comparingLong(Advertisement::
-            getAmountPerOneDisplaying).thenComparingInt(Advertisement::getDuration));
-    Collections.reverse(advertisements);
-  }
-
-  private void print() {
-    for (Advertisement video : advertisements) {
-      if (optimalVideos.contains(video)) {
-        video.revalidate();
-        ConsoleHelper.writeMessage(video.getName() +
-                " is displaying... " + video.getAmountPerOneDisplaying() +
-                ", " + video.getAmountPerOneDisplaying() * 1000 / video.getDuration());
       }
     }
   }
+
+  private void makeAllAdvertisements(List<Advertisement> advertisements) {
+    if (advertisements.size() > 0) {
+      checkSet(advertisements);
+    }
+    for (int i = 0; i < advertisements.size(); i++) {
+      List<Advertisement> newAdvertisements = new ArrayList<>(advertisements);
+      newAdvertisements.remove(i);
+      makeAllAdvertisements(newAdvertisements);
+    }
+  }
+
+
+  /////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//  private List<Advertisement> advertisements = storage.list();
+//  private List<Advertisement> optimalVideos = new ArrayList<>();
+//  private long maxMoney = Long.MIN_VALUE;
+//  private int maxDuration = Integer.MIN_VALUE;
+//  private int minSize = advertisements.size();
+
+
+//  public void processVideos() {
+//    if (!advertisements.isEmpty()) {
+//      sort();
+//      addProfitVideos();
+//      print();
+//    } else {
+//      StatisticManager.getInstance().register(new NoAvailableVideoEventDataRow(calcDuration(
+//              optimalVideos)));
+//      throw new NoVideoAvailableException();
+//    }
+//  }
+
+//  private void addProfitVideos() {
+//    List<Advertisement> tempVideoList = new ArrayList<>();
+//    for (int i = 0; i < advertisements.size(); i++) {
+//      Advertisement adv = advertisements.get(i);
+//      if (timeSeconds - adv.getDuration() >= 0 && !tempVideoList.contains(adv) &&
+//              adv.getAmountPerOneDisplaying() > 0) {
+//        tempVideoList.add(adv);
+//        timeSeconds -= adv.getDuration();
+//      }
+//    }
+//
+//    long tempSumMoney = calcMoney(tempVideoList);
+//    if (maxMoney < tempSumMoney) {
+//      maxMoney = tempSumMoney;
+//      optimalVideos = tempVideoList;
+//
+//    } else if (maxMoney == tempSumMoney) {
+//      int tempSumDuration = calcDuration(tempVideoList);
+//      if (maxDuration < tempSumDuration) {
+//        maxDuration = tempSumDuration;
+//        optimalVideos = tempVideoList;
+//
+//      } else if (maxDuration == tempSumDuration) {
+//        if (minSize > tempVideoList.size()) {
+//          minSize = tempVideoList.size();
+//          optimalVideos = tempVideoList;
+//        }
+//      }
+//    } else {
+//      addProfitVideos();
+//    }
+//
+//  }
+
+//  private long calcMoney(List<Advertisement> videos) {
+//    long sumMoney = 0;
+//    for (Advertisement adv : videos) {
+//      sumMoney += adv.getAmountPerOneDisplaying();
+//    }
+//    return sumMoney;
+//  }
+//
+//  private int calcDuration(List<Advertisement> videos) {
+//    int sumDuration = 0;
+//    for (Advertisement adv : videos) {
+//      sumDuration += adv.getDuration();
+//    }
+//    return sumDuration;
+//  }
+//
+//  private void sort() {
+//    Collections.sort(advertisements, Comparator.comparingLong(Advertisement::
+//            getAmountPerOneDisplaying).thenComparingInt(Advertisement::getDuration));
+//    Collections.reverse(advertisements);
+//  }
+//
+//  private void print() {
+//    StatisticManager manager = StatisticManager.getInstance();
+//    manager.register(new VideoSelectedEventDataRow(optimalVideos, calcMoney(optimalVideos),
+//            calcDuration(optimalVideos)));
+//    for (Advertisement video : advertisements) {
+//      if (optimalVideos.contains(video)) {
+//        video.revalidate();
+//        ConsoleHelper.writeMessage(video.getName() +
+//                " is displaying... " + video.getAmountPerOneDisplaying() +
+//                ", " + video.getAmountPerOneDisplaying() * 1000 / video.getDuration());
+//      }
+//    }
+//  }
 }
