@@ -15,10 +15,10 @@ public class TestOrder extends Order {
     this.dishes = new ArrayList<>();
 
     Dish[] allDishes = Dish.values();
-    int randomLengthDishList = 1 + (int) (Math.random() *  (allDishes.length));
+    int randomLengthDishList = 1 + (int) (Math.random() * allDishes.length);
 
     for (int i = 0; i < randomLengthDishList; i++) {
-      int randomIndex = (int) Math.random() * allDishes.length;
+      int randomIndex = (int) (Math.random() * allDishes.length);
       dishes.add(allDishes[randomIndex]);
     }
   }

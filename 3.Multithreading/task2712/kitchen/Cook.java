@@ -44,13 +44,24 @@ import com.javarush.task.task27.task2712.statistic.StatisticManager;
 import com.javarush.task.task27.task2712.statistic.event.CookedOrderEventDataRow;
 
 import java.util.Observable;
-import java.util.Observer;
+import java.util.Set;
+import java.util.concurrent.LinkedBlockingQueue;
 
-public class Cook extends Observable implements Observer {
+public class Cook extends Observable implements Runnable {
   private String name;
+  private boolean busy;
+  private LinkedBlockingQueue<Order> queue;
 
   public Cook(String name) {
     this.name = name;
+  }
+
+  public void setQueue(LinkedBlockingQueue<Order> queue) {
+    this.queue = queue;
+  }
+
+  public boolean isBusy() {
+    return busy;
   }
 
   @Override
@@ -58,16 +69,36 @@ public class Cook extends Observable implements Observer {
     return name;
   }
 
-  @Override
-  public void update(Observable o, Object arg) {
-    Order order = (Order) arg;
+  public void startCookingOrder(Order order) {
+    busy = true;
     ConsoleHelper.writeMessage("Start cooking - " + order);
     StatisticManager.getInstance().register(new CookedOrderEventDataRow(
-            o.toString(),
-            this.name,
+            order.toString(), this.name,
             order.getTotalCookingTime()*60,
             order.getDishes()));
+    try {
+      Thread.sleep(order.getTotalCookingTime() * 10);
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    }
     setChanged();
     notifyObservers(order);
+    busy = false;
+  }
+
+  @Override
+  public void run() {
+    try {
+      while (true) {
+        Thread.sleep(10);
+        if (!queue.isEmpty()) {
+          if (!this.isBusy()) {
+            this.startCookingOrder(queue.take());
+          }
+        }
+      }
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    }
   }
 }

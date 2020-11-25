@@ -114,7 +114,6 @@ import java.util.*;
 public class StatisticManager {
   private static StatisticManager instance;
   private StatisticStorage statisticStorage = new StatisticStorage();
-  private Set<Cook> cooks = new HashSet<>();
 
   private StatisticManager() {
   }
@@ -126,12 +125,9 @@ public class StatisticManager {
     return instance;
   }
 
+
   public void register(EventDataRow data) {
     statisticStorage.put(data);
-  }
-
-  public void register(Cook cook) {
-    cooks.add(cook);
   }
 
   public TreeMap<Date, Long> getProfitPerDayByAdvertisementMap() {
