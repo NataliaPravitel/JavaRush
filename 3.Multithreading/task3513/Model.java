@@ -119,6 +119,26 @@ package com.javarush.task.task35.task3513;
 // и добавлять плитку с помощью метода addTile, если это необходимо.
 //6. Метод right НЕ должен изменять массив gameTiles если перемещение вправо невозможно.
 
+//2048 (8)
+//Итак, модель почти готова, добавим еще пару простых методов и начнем реализацию контроллера.
+//
+//В модели нам не хватает способа получить игровое поле, чтобы передать его представлению на отрисовку,
+// а также метода, выполнив который, можно было бы определить возможен ли ход в текущей позиции, или нет.
+//
+//Контроллер, в свою очередь, будет в основном использоваться для обработки пользовательского ввода с клавиатуры,
+// поэтому сделаем его наследником класса KeyAdapter.
+//
+//Нам понадобятся приватные поля model и view соответствующих типов и методы getGameTiles и getScore,
+// возвращающие подходящие свойства модели.
+//
+//По пунктам:
+//1. Добавь в класс Model геттер для поля gameTiles.
+//2. Добавь в класс Model метод canMove возвращающий true в случае, если в текущей позиции возможно сделать ход так,
+// чтобы состояние игрового поля изменилось. Иначе - false.
+//3. Сделай класс Controller потомком класса KeyAdapter.
+//4. Добавь в класс Controller метод getGameTiles вызывающий такой же метод у модели.
+//5. Добавь в класс Controller метод getScore возвращающий текущий счет (model.score).
+
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -135,6 +155,26 @@ public class Model {
     resetGameTiles();
     this.score = 0;
     this.maxTile = 0;
+  }
+
+  public Tile[][] getGameTiles() {
+    return gameTiles;
+  }
+
+  public boolean canMove() {
+    for (int x = 0; x < FIELD_WIDTH - 1; x++) {
+      for (int y = 0; y < FIELD_WIDTH - 1; y++) {
+        if (gameTiles[x][y].isEmpty()) {
+          return true;
+        } else {
+          if (gameTiles[x][y].value == gameTiles[x][y+1].value ||
+              gameTiles[x][y].value == gameTiles[x+1][y].value) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
   }
 
   void resetGameTiles() {
@@ -178,6 +218,40 @@ public class Model {
     if (needAddTile) {
       addTile();
     }
+  }
+
+  void up() {
+    rotate90Degrees();
+    rotate90Degrees();
+    rotate90Degrees();
+    left();
+    rotate90Degrees();
+  }
+
+  void right() {
+    rotate90Degrees();
+    rotate90Degrees();
+    left();
+    rotate90Degrees();
+    rotate90Degrees();
+  }
+
+  void down() {
+    rotate90Degrees();
+    left();
+    rotate90Degrees();
+    rotate90Degrees();
+    rotate90Degrees();
+  }
+
+  private void rotate90Degrees() {
+    Tile[][] tempTiles = new Tile[FIELD_WIDTH][FIELD_WIDTH];
+    for (int x = 0; x < FIELD_WIDTH; x++) {
+      for (int y = 0; y < FIELD_WIDTH; y++) {
+        tempTiles[y][FIELD_WIDTH - 1 - x] = gameTiles[x][y];
+      }
+    }
+    gameTiles = tempTiles;
   }
 
   private boolean compressTiles(Tile[] tiles) {
