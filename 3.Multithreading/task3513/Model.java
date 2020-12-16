@@ -139,17 +139,134 @@ package com.javarush.task.task35.task3513;
 //4. Добавь в класс Controller метод getGameTiles вызывающий такой же метод у модели.
 //5. Добавь в класс Controller метод getScore возвращающий текущий счет (model.score).
 
-import org.junit.Test;
+//2048 (11)
+//Отличная работа! На этом этапе у нас уже есть полнофункциональное приложение,
+// но ведь нет предела совершенству, давай еще поработаем.
+//
+//Если ты успел какое-то время поиграть в 2048,
+// то заметил, что порой очень хочется иметь возможность отменить последний ход.
+//
+//Давай создадим в классе Model два стека, в одном будем хранить предыдущие состояния игрового поля,
+// а в другом предыдущие счета. Назовем их previousStates и previousScores.
+// Инициализировать можешь прямо в строке объявления или в конструкторе.
+// Используй стандартную реализацию стека (java.util.Stack).
+//
+//Добавим boolean поле isSaveNeeded = true, оно нам понадобится в будущем.
+//
+//Хранилище состояний у нас есть, теперь реализуем два метода для работы с ними.
+//1. Приватный метод saveState с одним параметром типа Tile[][] будет сохранять текущее
+//игровое состояние и счет в стеки с помощью метода push и устанавливать флаг isSaveNeeded равным false.
+//2. Публичный метод rollback будет устанавливать текущее игровое состояние
+// равным последнему находящемуся в стеках с помощью метода pop.
+//
+//Обрати внимание на то, что при сохранении массива gameTiles необходимо создать новый массив и
+// заполнить его новыми объектами типа Tile перед сохранением в стек.
+//
+//В методе rollback достаточно просто выполнить присваивание (gameTiles = previousStates.pop()) и
+// то же для счета, нет необходимости в глубоком копировании.
+//
+//Перед восстановлением игрового состояния с помощью метода rollback не забудь проверить что стеки
+// не пусты, чтобы избежать возникновения исключения EmptyStackException.
+//
+//
+//Требования:
+//1. В классе Model должны быть объявлены и инициализированы приватные поля previousStates, previousScores, isSaveNeeded.
+//2. Метод saveState должен сохранять в стек previousStates новый объект типа Tile[][] с помощью метода push.
+//3. После вызова метода saveState веса плиток в массиве который находится на вершине стека должны
+// совпадать с весами плиток массива полученного в качестве параметра.
+//4. Метод saveState должен сохранять в стек previousScores текущее значение поля score с помощью метода push.
+//5. Метод saveState должен устанавливать флаг isSaveNeeded равным false.
+//6. Метод rollback должен восстанавливать поля score и gameTiles из соответствующих стеков, если они не пусты.
+//7. Метод rollback не должен модифицировать текущее игровое состояние в случае, если хотя бы один из стеков пуст.
+//8. Каждый вызов метода saveState должен увеличивать количество элементов в стеках на единицу.
+//9. Каждый вызов метода rollback должен уменьшать количество элементов в стеках на единицу, до тех пор пока это возможно.
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+//2048 (12)
+//Ну что, попробуем наш алгоритм в действии? Осталось добавить сохранение игрового состояния
+// в начало каждого метода движения, а также еще один кейс для обработки клавиши,
+// которой будем выполнять отмену последнего хода.
+//
+//При сохранении текущего состояния в стек, обрати внимание на то, чтобы всегда сохранялось
+// актуальное состояние и только однажды. Если ты послушал мой совет и реализовал методы
+// right, up, down с помощью поворотов и вызова метода left, можешь использовать следующий подход:
+//1. В самом начале методов right, up, down вызываем метод saveState с gameTiles в качестве параметра.
+//2. В методе left организуем проверку того, вызывался ли уже метод saveState.
+// За это у нас отвечает флаг isSaveNeeded, соответственно, если он равен true, выполняем сохранение.
+// После выполнения сдвига влево устанавливаем флаг isSaveNeeded равным true.
+//
+//Также добавим в метод keyPressed класса Controller вызов метода rollback по нажатию на клавишу Z (код - KeyEvent.VK_Z).
+//
+//
+//Требования:
+//1. Метод keyPressed класса Controller должен вызывать метод rollback у модели в случае, если была нажата клавиша с кодом KeyEvent.VK_Z.
+//2. Метод left должен один раз сохранять текущее игровое состояние и счет в соответствующие стеки.
+//3. Метод right должен один раз сохранять текущее игровое состояние и счет в соответствующие стеки.
+//4. Метод up должен один раз сохранять текущее игровое состояние и счет в соответствующие стеки.
+//5. Метод down должен один раз сохранять текущее игровое состояние и счет в соответствующие стеки.
+
+//2048 (13)
+//Твой прогресс впечатляет! Для разнообразия, предлагаю дать игре возможность самостоятельно
+//выбирать следующий ход.
+//
+//Начнем с простого, реализуем метод randomMove в классе Model,
+// который будет вызывать один из методов движения случайным образом.
+// Можешь реализовать это вычислив целочисленное n = ((int) (Math.random() * 100)) % 4.
+//Это число будет содержать целое псевдослучайное число в диапазоне [0..3],
+// по каждому из которых можешь вызывать один из методов left, right, up, down.
+//
+//Не забудь добавить в метод keyPressed класса Controller вызов метода randomMove по нажатию на клавишу R (код - KeyEvent.VK_R).
+//
+//P.S. Проверку корректности работы метода randomMove оставляю полностью под твою ответственность,
+// проверю только наличие вызова метода Math.random().
+//
+//
+//Требования:
+//1. У класса Model должен быть метод void randomMove().
+//2. Метод keyPressed класса Controller должен вызывать метод randomMove у модели в случае,
+// если была нажата клавиша с кодом KeyEvent.VK_R.
+//3. Метод randomMove должен использовать статический метод random класса Math.
+
+//2048 (16)
+//Осталось совсем немного! У нас есть способ вычислить эффективность любого хода,
+// а также мы можем их сравнивать между собой.
+//
+//Давай реализуем метод autoMove в классе Model, который будет выбирать лучший из возможных ходов и
+// выполнять его.
+//
+//Сделаем так:
+//1) Создадим локальную PriorityQueue с параметром Collections.reverseOrder() (для того, чтобы вверху
+// очереди всегда был максимальный элемент) и размером равным четырем.
+//2) Заполним PriorityQueue четырьмя объектами типа MoveEfficiency (по одному на каждый вариант хода).
+//3) Возьмем верхний элемент и выполним ход связанный с ним.
+//
+//После реализации метода autoMove добавим его вызов в метод keyPressed класса Controller по нажатию
+// на клавишу A (код - KeyEvent.VK_A).
+//
+//P.S. В качестве факультативного задания можешь почитать про указатели на методы и попробовать
+// передать аргумент в метод getMoveEfficiency используя оператор "::".
+// Для метода left должно получиться getMoveEfficiency(this::left).
+// Альтернативно можешь использовать внутренний анонимный класс.
+//
+//
+//Требования:
+//1. В методе autoMove должен быть создан объект типа PriorityQueue с размером равным четырем.
+//2. В методе autoMove в PriorityQueue должно быть добавлено 4 объекта типа MoveEfficiency с
+// помощью метода offer (по одному на каждый вариант хода).
+//3. Метод keyPressed класса Controller должен вызывать метод autoMove у модели в случае,
+// если была нажата клавиша с кодом KeyEvent.VK_A.
+//4. В методе autoMove должен быть выполнен метод move связанный с объектом MoveEfficiency
+// полученном с помощью метода peek или poll.
+
+import java.util.*;
 
 public class Model {
   private static final int FIELD_WIDTH = 4;
   private Tile[][] gameTiles;
   int score;
   int maxTile;
+  private Stack<Tile[][]> previousStates = new Stack<>();
+  private Stack<Integer> previousScores = new Stack<>();
+  private boolean isSaveNeeded = true;
 
   public Model() {
     resetGameTiles();
@@ -162,6 +279,9 @@ public class Model {
   }
 
   public boolean canMove() {
+    if(getEmptyTiles().size() != 0) {
+      return true;
+    }
     for (int x = 0; x < FIELD_WIDTH - 1; x++) {
       for (int y = 0; y < FIELD_WIDTH - 1; y++) {
         if (gameTiles[x][y].isEmpty()) {
@@ -208,7 +328,59 @@ public class Model {
     return emptyTiles;
   }
 
+  void randomMove() {
+    int n = ((int) (Math.random() * 100)) % 4;
+    switch (n) {
+      case 0:
+        left();
+        break;
+      case 1:
+        right();
+        break;
+      case 2:
+        up();
+        break;
+      case 3:
+        down();
+        break;
+    }
+  }
+
+  void autoMove() {
+    PriorityQueue<MoveEfficiency> moveEfficiencies =
+            new PriorityQueue(4, Collections.reverseOrder());
+    moveEfficiencies.offer(getMoveEfficiency(this::left));
+    moveEfficiencies.offer(getMoveEfficiency(this::right));
+    moveEfficiencies.offer(getMoveEfficiency(this::up));
+    moveEfficiencies.offer(getMoveEfficiency(this::down));
+    moveEfficiencies.peek().getMove().move();
+  }
+
+  MoveEfficiency getMoveEfficiency(Move move) {
+    MoveEfficiency moveEfficiency = new MoveEfficiency(-1, 0, move);
+    move.move();
+    if (hasBoardChanged()) {
+      moveEfficiency = new MoveEfficiency(getEmptyTiles().size(), score, move);
+    }
+    rollback();
+    return moveEfficiency;
+  }
+
+  private boolean hasBoardChanged() {
+    for (int x = 0; x < FIELD_WIDTH; x++) {
+      for (int y = 0; y < FIELD_WIDTH; y++) {
+        if (gameTiles[x][y].value != previousStates.peek()[x][y].value) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
   void left() {
+    if (isSaveNeeded) {
+      saveState(gameTiles);
+    }
     boolean needAddTile = false;
     for (int x = 0; x < FIELD_WIDTH; x++) {
       if (compressTiles(gameTiles[x]) | mergeTiles(gameTiles[x])) {
@@ -218,9 +390,11 @@ public class Model {
     if (needAddTile) {
       addTile();
     }
+    isSaveNeeded = true;
   }
 
   void up() {
+    saveState(gameTiles);
     rotate90Degrees();
     rotate90Degrees();
     rotate90Degrees();
@@ -229,6 +403,7 @@ public class Model {
   }
 
   void right() {
+    saveState(gameTiles);
     rotate90Degrees();
     rotate90Degrees();
     left();
@@ -237,6 +412,7 @@ public class Model {
   }
 
   void down() {
+    saveState(gameTiles);
     rotate90Degrees();
     left();
     rotate90Degrees();
@@ -277,61 +453,22 @@ public class Model {
     return isMerge;
   }
 
-
-
-
-
-
-  public static void print(Tile[] tiles){
-    for (int i = 0; i < tiles.length; i++) {
-      System.out.print(tiles[i].value + " ");
+  private void saveState(Tile[][] gameState) {
+    Tile[][] tempGameState = new Tile[FIELD_WIDTH][FIELD_WIDTH];
+    for (int x = 0; x < FIELD_WIDTH; x++) {
+      for (int y = 0; y < FIELD_WIDTH; y++) {
+        tempGameState[x][y] = new Tile(gameState[x][y].value);
+      }
     }
-    System.out.println();
-  }
-  public static void hash(Tile[] tiles){
-    for (int i = 0; i < tiles.length; i++)
-      System.out.print(tiles[i].hashCode() + " ");
-    System.out.println();
+    previousStates.push(tempGameState);
+    previousScores.push(score);
+    isSaveNeeded = false;
   }
 
-  @Test
-  public void test (){
-    Tile[] tiles = new Tile[]{new Tile(0), new Tile(0), new Tile(0), new Tile(4)};
-    print(tiles);
-    hash(tiles);
-    System.out.println(new Model().mergeTiles(tiles));
-    print(tiles);
-    hash(tiles);
-    System.out.println("===============================");
-    tiles = new Tile[]{new Tile(4), new Tile(4), new Tile(2), new Tile(0)};
-    print(tiles);
-    hash(tiles);
-    System.out.println(new Model().mergeTiles(tiles));
-    print(tiles);
-    hash(tiles);
-    System.out.println("===============================");
-    tiles = new Tile[]{new Tile(4), new Tile(2), new Tile(0), new Tile(4)};
-    print(tiles);
-    hash(tiles);
-    System.out.println(new Model().mergeTiles(tiles));
-    print(tiles);
-    hash(tiles);
-    System.out.println("===============================");
-    tiles = new Tile[]{new Tile(4), new Tile(4), new Tile(4), new Tile(0)};
-    print(tiles);
-    hash(tiles);
-    System.out.println(new Model().mergeTiles(tiles));
-    print(tiles);
-    hash(tiles);
-    System.out.println("===============================");
-    tiles = new Tile[]{new Tile(4), new Tile(4), new Tile(4), new Tile(4)};
-
-    print(tiles);
-    hash(tiles);
-    System.out.println(new Model().mergeTiles(tiles));
-    print(tiles);
-    hash(tiles);
-    System.out.println("===============================");
+  public void rollback() {
+    if (!previousStates.isEmpty() && !previousScores.isEmpty()) {
+      gameTiles = previousStates.pop();
+      score = previousScores.pop();
+    }
   }
-
 }
