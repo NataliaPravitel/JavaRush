@@ -106,12 +106,34 @@ availableToAddLeftChildren и availableToAddRightChildren.
 2. В классе CustomTree должны быть переопределены методы add(String s) и size().
 3. После добавления N элементов в дерево с помощью метода add, метод size должен возвращать N.
 4. Метод getParent должен возвращать имя родителя для любого элемента дерева.
+
+
+Построй дерево(5)
+Добавлять в дерево элементы мы можем, теперь займись удалением:
+Необходимо реализовать метод remove(Object o), который будет удалять элемент дерева
+имя которого было полученного в качестве параметра.
+Если переданный объект не является строкой, метод должен бросить UnsupportedOperationException.
+Если в дереве присутствует несколько элементов с переданным именем -
+можешь удалить только первый найденный.
+Не забывай сверять поведение своего дерева с картинкой:
+Что будет если удалить из дерева элементы "3", "4", "5" и "6",
+а затем попытаемся добавить новый елемент?
+В таком случае элементы "1" и "2" должны восстановить возможность иметь потомков
+(возможно придется внести изменения в метод add()).
+
+Требования:
+1. После удаления последнего добавленного элемента из дерева с помощью метода remove,
+метод size должен возвращать N-1.
+2. После удаления второго элемента добавленного в дерево, метод size должен возвращать N/2 + 1
+(для случаев где N > 2 и является степенью двойки), N - размер дерева до удаления.
+3. Если переданный объект не является строкой, метод remove()
+должен бросить UnsupportedOperationException.
+4. Если ни один элемент не способен иметь потомков, необходимо восстановить такую возможность.
 */
 
 public class CustomTree extends AbstractList<String> implements Cloneable, Serializable {
   Entry<String> root;
   private List<Entry<String>> tree = new LinkedList<>();
-  private int countElements;
 
   public CustomTree() {
     this.root = new Entry<>(null);
@@ -125,39 +147,158 @@ public class CustomTree extends AbstractList<String> implements Cloneable, Seria
 
   @Override
   public int size() {
-    return countElements;
+    return tree.size() - 1;
+  }
+
+  public void printChild(String s) {
+    for (Entry<String> el : tree) {
+      if (el.elementName != null) {
+        if (el.elementName.equals(s)) {
+          System.out.println(el.leftChild.elementName);
+          System.out.println(el.rightChild);
+        }
+      }
+    }
   }
 
   @Override
   public boolean add(String s) {
     Queue<Entry<String>> tempTree = new LinkedList<>();
     tempTree.add(root);
+    Deque<Entry<String>> elementsWithBothDeleteChildren = new ArrayDeque<>();
+    boolean isAdd = false;
 
     do{
       Entry<String> topElementInBranch = tempTree.poll();
+      if (topElementInBranch != null) {
+        String nameTOP = topElementInBranch.elementName;
+        if (topElementInBranch.availableToAddLeftChildren) {
+          Entry<String> leftChild = new Entry<>(s);
+          topElementInBranch.leftChild = leftChild;
+          leftChild.parent = topElementInBranch;
+          topElementInBranch.availableToAddLeftChildren = false;
+          isAdd = true;
 
-      if (topElementInBranch.availableToAddLeftChildren) {
-        Entry<String> leftChild = new Entry<>(s);
-        topElementInBranch.leftChild = leftChild;
-        leftChild.parent = topElementInBranch;
-        topElementInBranch.availableToAddLeftChildren = false;
-        countElements++;
-        return tree.add(leftChild);
+          return tree.add(leftChild);
 
-      } else if (topElementInBranch.availableToAddRightChildren) {
-        Entry<String> rightChild = new Entry<>(s);
-        topElementInBranch.rightChild = rightChild;
-        rightChild.parent = topElementInBranch;
-        topElementInBranch.availableToAddRightChildren = false;
-        countElements++;
-        return tree.add(rightChild);
+        } else if (topElementInBranch.availableToAddRightChildren) {
+          Entry<String> rightChild = new Entry<>(s);
+          topElementInBranch.rightChild = rightChild;
+          rightChild.parent = topElementInBranch;
+          topElementInBranch.availableToAddRightChildren = false;
+          isAdd = true;
+          return tree.add(rightChild);
 
-      } else if (!topElementInBranch.isAvailableToAddChildren()) {
-        tempTree.add(topElementInBranch.leftChild);
-        tempTree.add(topElementInBranch.rightChild);
+        } else if (!topElementInBranch.isAvailableToAddChildren()) {
+
+          if (topElementInBranch.wasDeleteBothChildren()) {
+            elementsWithBothDeleteChildren.add(topElementInBranch);
+
+          } else {
+            tempTree.add(topElementInBranch.leftChild);
+            tempTree.add(topElementInBranch.rightChild);
+          }
+
+        }
       }
+
     } while (!tempTree.isEmpty());
+    if (!isAdd && elementsWithBothDeleteChildren.size() > 0) {
+      do {
+        Entry<String> elementWithBothDeleteChildren = elementsWithBothDeleteChildren.poll();
+        for (Entry<String> element : tree) {
+          if (element.elementName != null) {
+            if (element.elementName.equals(elementWithBothDeleteChildren.elementName)) {
+              element.availableToAddLeftChildren = true;
+              element.availableToAddRightChildren = true;
+            }
+          }
+        }
+      } while (!elementsWithBothDeleteChildren.isEmpty());
+
+      return add(s);
+    }
+
     return false;
+  }
+
+  @Override
+  public boolean remove(Object o) {
+    if (! (o instanceof String)) {
+      throw new UnsupportedOperationException();
+    }
+    String removeElementName = (String) o;
+    Deque<Entry<String>> allElementsInDeleteBranch = new ArrayDeque<>();
+
+    for (Entry<String> element : tree) {
+      if (element.elementName != null && element.elementName.equals(removeElementName)) {
+        allElementsInDeleteBranch.add(element);
+        break;
+      }
+    }
+    allElementsInDeleteBranch = searchAllChild(allElementsInDeleteBranch);
+
+    do {
+      Entry<String> deleteElement = allElementsInDeleteBranch.pollLast();
+      String deleteElementName = deleteElement.elementName;
+      String parentDeleteElemName = deleteElement.parent.elementName;
+
+      for (Entry<String> elementInTree : tree) {
+        String elName = elementInTree.elementName;
+
+        if (elName != null) {
+          if (elementInTree.leftChild != null) {
+            if (elName.equals(parentDeleteElemName) &&
+                    elementInTree.leftChild.elementName.equals(deleteElementName)) {
+
+              elementInTree.availableToAddLeftChildren = false;
+              elementInTree.deleteLeftChildren = true;
+              elementInTree.leftChild = null;
+              break;
+            }
+
+          } if(elementInTree.rightChild != null) {
+            if (elName.equals(parentDeleteElemName)
+                    && elementInTree.rightChild.elementName.equals(deleteElementName)) {
+
+              elementInTree.availableToAddRightChildren = false;
+              elementInTree.deleteRightChildren = true;
+              elementInTree.rightChild = null;
+              break;
+            }
+          }
+        }
+      }
+      deleteElement.availableToAddLeftChildren = false;
+      deleteElement.availableToAddRightChildren = false;
+      deleteElement.parent = null;
+      tree.remove(deleteElement);
+    } while (!allElementsInDeleteBranch.isEmpty());
+
+    return false;
+  }
+
+  private Deque<Entry<String>> searchAllChild(Deque<Entry<String>> removeElements) {
+    Deque<Entry<String>> temp = new ArrayDeque<>(removeElements);
+
+    do {
+      Entry<String> top = temp.pollLast();
+
+      if (!top.isAvailableToAddChildren()) {
+        removeElements.add(top.leftChild);
+        temp.add(top.leftChild);
+        removeElements.add(top.rightChild);
+        temp.add(top.rightChild);
+      } else if (!top.availableToAddLeftChildren) {
+        removeElements.add(top.leftChild);
+        temp.add(top.leftChild);
+      } else if (!top.availableToAddRightChildren) {
+        removeElements.add(top.rightChild);
+        temp.add(top.rightChild);
+      }
+
+    } while (!temp.isEmpty());
+    return removeElements;
   }
 
   public String getParent(String s) {
@@ -204,6 +345,8 @@ public class CustomTree extends AbstractList<String> implements Cloneable, Seria
     String elementName;
     boolean availableToAddLeftChildren;
     boolean availableToAddRightChildren;
+    boolean deleteLeftChildren;
+    boolean deleteRightChildren;
     Entry<T> parent;
     Entry<T> leftChild;
     Entry<T> rightChild;
@@ -212,10 +355,17 @@ public class CustomTree extends AbstractList<String> implements Cloneable, Seria
       this.elementName = elementName;
       this.availableToAddLeftChildren = true;
       this.availableToAddRightChildren = true;
+      this.deleteLeftChildren = false;
+      this.deleteRightChildren = false;
     }
 
     public boolean isAvailableToAddChildren() {
       return availableToAddLeftChildren || availableToAddRightChildren;
     }
+
+    public boolean wasDeleteBothChildren() {
+      return deleteLeftChildren && deleteRightChildren;
+    }
+
   }
 }
