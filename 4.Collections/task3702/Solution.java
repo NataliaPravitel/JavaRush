@@ -1,7 +1,5 @@
 package com.javarush.task.task37.task3702;
 
-import com.javarush.task.task37.task3702.female.AbstractFactory;
-
 public class Solution {
     public static void main(String[] args) {
         AbstractFactory factory = FactoryProducer.getFactory(FactoryProducer.HumanFactoryType.FEMALE);
