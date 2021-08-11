@@ -1,8 +1,9 @@
 package com.javarush.task.task37.task3702.male;
 
 import com.javarush.task.task37.task3702.Human;
+import com.javarush.task.task37.task3702.female.AbstractFactory;
 
-public class MaleFactory {
+public class MaleFactory implements AbstractFactory {
   public Human getPerson(int age) {
     Human human = null;
     if (age <= KidBoy.MAX_AGE) {
